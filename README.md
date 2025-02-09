@@ -40,8 +40,10 @@ pnpm install
 
 Create a .env.local file in the root directory:
 ```env
-AITUTOR_API_KEY=your_api_key_here
-CHATBOT_ID=your_chatbot_id_here
+AITUTOR_API_KEY=xxxxxxxxx
+WORKFLOW_ID=xxxxxxxxx
+CHATBOT_ID=xxxxxxxxx
+NEXT_PUBLIC_AITUTOR_TOKEN=xxxxxxxxxx
 ```
 
 Run the development server:
