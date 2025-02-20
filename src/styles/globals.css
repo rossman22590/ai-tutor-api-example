@@ -18,14 +18,14 @@
 }
 
 .prose strong {
-  color: #4C1D95; /* purple-900 */
+  color: #fff; /* purple-900 */
 }
 
 .prose h1,
 .prose h2,
 .prose h3,
 .prose h4 {
-  color: #6D28D9; /* purple-700 */
+  color: #fff; /* purple-700 */
   font-weight: 700;
   margin-top: 2em;
   margin-bottom: 1em;
