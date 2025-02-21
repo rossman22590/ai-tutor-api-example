@@ -1,4 +1,5 @@
-
+/* eslint-disable */
+/* stylelint-disable */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -30,7 +31,6 @@
   margin-top: 2em;
   margin-bottom: 1em;
 }
-
 
 :root {
   /* #region  /**=========== Primary Color =========== */
@@ -146,3 +146,26 @@
     background-size: 0 2px, 100% 2px;
   }
 }
+
+/* New universal output styling */
+.output-container {
+  @apply bg-white rounded-lg shadow-md p-6 mb-8;
+}
+
+.output-title {
+  @apply text-2xl font-bold text-gray-800 mb-4;
+}
+
+.output-list {
+  @apply list-none p-0;
+}
+
+.output-list li {
+  @apply mb-3 pl-6 relative;
+}
+
+.output-list li::before {
+  content: "•";
+  @apply absolute left-0 text-blue-500 font-bold;
+}
+

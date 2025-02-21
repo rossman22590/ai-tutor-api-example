@@ -1,203 +1,234 @@
+// src/app/page.tsx
 "use client";
-import { useState } from 'react';
-import StoryDisplay from '@/components/StoryDisplay';
-import { FaGithub, FaCode, FaCheck } from 'react-icons/fa';
 
-// API Response Type Definitions
-interface ApiSuccessResponse {
-  success: boolean;
-  result: string;
-  workflow_id?: string;
-  run_id?: string;
-}
-
-interface ApiErrorResponse {
-  success: boolean;
-  error: string;
-}
-
-type ApiResponse = ApiSuccessResponse | ApiErrorResponse;
-
-// Form Data Interface (all fields included)
-interface FormData {
-  BusinessPlan: string;
-  ProductName: string;
-  CompanyName: string;
-  MissionStatement: string;
-  BusinessObjectives: string;
-  BusinessOverview: string;
-  MarketNeeds: string;
-  UniqueSellingProposition: string;
-  objective: string;
-}
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaChevronDown } from 'react-icons/fa';
+import { WORKFLOWS } from '@/constants/workflows';
+import { FormData, Workflow, ApiResponse, WorkflowRequest } from '@/types';
 
 export default function Home() {
-  // Form State Management
-  const [formData, setFormData] = useState<FormData>({
-    BusinessPlan: '',
-    ProductName: '',
-    CompanyName: '',
-    MissionStatement: '',
-    BusinessObjectives: '',
-    BusinessOverview: '',
-    MarketNeeds: '',
-    UniqueSellingProposition: '',
-    objective: '',
-  });
-
-  const [result, setResult] = useState<ApiSuccessResponse | null>(null);
-  const [error, setError] = useState('');
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow>(WORKFLOWS[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [formData, setFormData] = useState<FormData>({});
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ApiResponse | null>(null);
+  const [error, setError] = useState('');
 
-  // Valid Fields State for Visual Feedback
-  const [validFields, setValidFields] = useState<Record<keyof FormData, boolean>>({
-    BusinessPlan: false,
-    ProductName: false,
-    CompanyName: false,
-    MissionStatement: false,
-    BusinessObjectives: false,
-    BusinessOverview: false,
-    MarketNeeds: false,
-    UniqueSellingProposition: false,
-    objective: false,
-  });
+  useEffect(() => {
+    console.log('Component mounted. Current workflow:', selectedWorkflow.id);
+  }, []);
 
-  // Form Validation: Ensure that all fields are filled
-  const validateForm = (): boolean => {
-    const emptyFields = Object.entries(formData)
-      .filter(([_, value]) => !value.trim())
-      .map(([key]) => key);
+  useEffect(() => {
+    console.log('Selected workflow changed to:', selectedWorkflow.id);
+    setFormData({}); // Reset form data when workflow changes
+  }, [selectedWorkflow]);
 
-    if (emptyFields.length > 0) {
-      setError(`Please fill in all fields: ${emptyFields.join(', ')}`);
-      return false;
-    }
-    return true;
-  };
-
-  // Input Change Handler: Updates form data and valid state
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setValidFields(prev => ({ ...prev, [name]: value.trim().length > 0 }));
-    if (error) setError('');
+    console.log('Form data updated:', { [name]: value });
   };
 
-  // Form Submission Handler: Validate and submit data to the API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
     setLoading(true);
-    setResult(null);
     setError('');
+    setResult(null);
+
+    console.log('Submitting form with workflowId:', selectedWorkflow.id);
+    console.log('Form data:', formData);
 
     try {
+      const requestBody: WorkflowRequest = {
+        workflowId: selectedWorkflow.id,
+        formData
+      };
+
       const response = await fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody)
       });
-      const data = await response.json();
 
-      if (response.ok && 'result' in data) {
-        setResult(data as ApiSuccessResponse);
+      console.log('Response status:', response.status);
+      const data: ApiResponse = await response.json();
+      console.log('Response data:', data);
+
+      if ('success' in data && data.success) {
+        setResult(data);
       } else {
-        setError(
-          (data as ApiErrorResponse).error ||
-            'An error occurred while processing the request.'
-        );
+        throw new Error('error' in data ? data.error : 'Unknown error occurred');
       }
-    } catch (err) {
-      setError('An error occurred while fetching the response.');
-      console.error('Submission error:', err);
+    } catch (error) {
+      console.error('Error during form submission:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 p-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8 p-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text inline-block">
-            Business Plan Generator
-          </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-gradient" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+              Business Intelligence Suite
+            </h1>
+            <p className="mt-4 text-xl text-gray-300">
+              Transform your business strategy with AI-powered insights
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="relative mb-8">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 flex items-center justify-between text-white hover:bg-white/10 transition-all duration-200"
+          >
+            <div className="flex items-center space-x-3">
+              {selectedWorkflow.icon}
+              <span className="text-lg font-medium">{selectedWorkflow.name}</span>
+            </div>
+            <FaChevronDown 
+              className={`transform transition-transform duration-200 ${
+                isDropdownOpen ? 'rotate-180' : ''
+              }`} 
+            />
+          </button>
+
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute w-full mt-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden z-50"
+              >
+                {WORKFLOWS.map((workflow) => (
+                  <button
+                    key={workflow.id}
+                    onClick={() => {
+                      console.log('Selecting workflow:', workflow.id);
+                      setSelectedWorkflow(workflow);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full p-4 flex items-center space-x-3 hover:bg-white/10 transition-all duration-200 text-white"
+                  >
+                    {workflow.icon}
+                    <span className="text-lg">{workflow.name}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="glass-morphism p-8 mb-8 rounded-xl shadow-xl backdrop-blur-lg bg-white/30">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {Object.keys(formData).map((key) => (
-              <div key={key} className="space-y-2">
+        <motion.form
+          key={selectedWorkflow.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          onSubmit={handleSubmit}
+          className="space-y-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {selectedWorkflow.fields.map((field) => (
+              <div key={field.name} className="space-y-2">
                 <label
-                  htmlFor={key}
-                  className="block text-lg font-medium text-gray-700 flex items-center justify-between"
+                  htmlFor={field.name}
+                  className="block text-sm font-medium text-gray-300"
                 >
-                  <span>{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                  {validFields[key as keyof FormData] && (
-                    <FaCheck className="text-green-500" />
-                  )}
+                  {field.label}
                 </label>
-                <textarea
-                  id={key}
-                  name={key}
-                  value={formData[key as keyof FormData]}
-                  onChange={handleChange}
-                  placeholder={`Enter ${key.replace(/([A-Z])/g, ' $1').trim()}...`}
-                  className={`w-full p-4 rounded-lg bg-white/50 border ${
-                    validFields[key as keyof FormData]
-                      ? 'border-green-200 focus:ring-green-400'
-                      : 'border-purple-200 focus:ring-purple-400'
-                  } text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent shadow-inner min-h-[100px]`}
-                  required
-                />
+                {field.type === 'textarea' ? (
+                  <textarea
+                    id={field.name}
+                    name={field.name}
+                    value={formData[field.name] || ''}
+                    onChange={handleInputChange}
+                    className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={4}
+                  />
+                ) : (
+                  <input
+                    type={field.type}
+                    id={field.name}
+                    name={field.name}
+                    value={formData[field.name] || ''}
+                    onChange={handleInputChange}
+                    className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                )}
               </div>
             ))}
-            <button
-              type="submit"
-              disabled={loading || !Object.values(validFields).every(Boolean)}
-              className="w-full py-4 px-6 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 px-6 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Processing...
+              </div>
+            ) : (
+              'Generate'
+            )}
+          </button>
+        </motion.form>
+
+        <AnimatePresence>
+          {(result || error) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="mt-8"
             >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Generating...
+              {error ? (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-400">
+                  {error}
                 </div>
               ) : (
-                'Generate Plan'
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+                  <pre className="text-gray-300 whitespace-pre-wrap">
+                    {JSON.stringify(result, null, 2)}
+                  </pre>
+                </div>
               )}
-            </button>
-          </form>
-        </div>
-
-        {error && (
-          <div className="glass-morphism p-4 mb-8 text-red-600 text-center rounded-lg bg-red-50/50">
-            {error}
-          </div>
-        )}
-
-        {result && <StoryDisplay result={result} />}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
 }
-
